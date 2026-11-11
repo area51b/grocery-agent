@@ -1,0 +1,21 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Local data: SQLite store, raw captures, per-account browser profiles
+data/
+*.db
+*.sqlite3
+
+# Secrets
+.env
+
+# Test artifacts
+.pytest_cache/

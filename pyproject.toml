@@ -1,0 +1,27 @@
+[project]
+name = "grocery-agent"
+version = "0.1.0"
+description = "Family Grocery Intelligence Agent"
+readme = "README.md"
+authors = [
+    { name = "grocery-agent maintainer" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "langchain-openai>=1.7.4",
+    "langgraph>=1.2.20",
+    "playwright>=1.65.0",
+]
+
+[project.scripts]
+grocery = "grocery_agent.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.4.1.post1",
+]
