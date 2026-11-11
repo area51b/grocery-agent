@@ -193,6 +193,22 @@ class TestReplySplitting:
         assert chunks == ["x" * 4096, "x" * 904]
 
 
+class TestCommandMenu:
+    @pytest.mark.asyncio
+    async def test_setup_commands_registers_menu(self):
+        registered = []
+
+        class StubTelegramBot:
+            async def set_my_commands(self, commands):
+                registered.extend(commands)
+
+        app = SimpleNamespace(bot=StubTelegramBot())
+        await bot_module.setup_commands(app)
+        names = [c.command for c in registered]
+        assert names == ["start", "spend", "top", "last", "help"]
+        assert all(c.description for c in registered)
+
+
 class TestStartupValidation:
     def test_missing_token_exits_with_error(self, tmp_path, monkeypatch):
         monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)

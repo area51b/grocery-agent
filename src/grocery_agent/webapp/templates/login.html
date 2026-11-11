@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Log in — grocery-agent{% endblock %}
+{% block content %}
+  <div style="max-width: 360px; margin: 10vh auto;">
+    <div class="panel" style="padding: 2rem;">
+      <h1 style="margin-bottom: 0.25rem;">grocery-agent</h1>
+      <p class="muted" style="margin-top: 0;">Household grocery insights</p>
+      {% if error %}<p class="error">{{ error }}</p>{% endif %}
+      <form method="post" action="/login">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" style="width: 100%;" autofocus>
+        <button type="submit" class="primary" style="width: 100%; margin-top: 1rem;">Log in</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

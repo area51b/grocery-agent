@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Coverage — grocery-agent{% endblock %}
+{% block content %}
+  <h1>Data coverage</h1>
+  {% if store_error %}
+    <p class="error">{{ store_error }}</p>
+  {% elif accounts %}
+    <div class="panel" style="max-width: 640px;">
+      <table>
+        <tr><th>Account</th><th>Earliest</th><th>Latest</th><th>Transactions</th></tr>
+        {% for a in accounts %}
+          <tr><td>{{ a.account }}</td><td>{{ a.earliest }}</td><td>{{ a.latest }}</td><td>{{ a.transactions }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    <p style="color: #64748b;">Status is informational; ingestion runs separately via <code>grocery ingest</code>.</p>
+  {% else %}
+    <p>No data ingested yet. Run <code>grocery ingest --account &lt;label&gt;</code> separately to populate the store.</p>
+  {% endif %}
+{% endblock %}

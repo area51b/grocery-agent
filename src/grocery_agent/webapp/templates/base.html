@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}grocery-agent{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --sidebar: #0f172a;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #6366f1;
+      --accent-soft: #eef2ff;
+      --border: #e2e8f0;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+      margin: 0; display: flex; min-height: 100vh;
+      background: var(--bg); color: var(--text);
+    }
+    nav {
+      width: 220px; background: var(--sidebar); padding: 1.5rem 1rem;
+      display: flex; flex-direction: column; gap: 0.25rem;
+    }
+    .brand { color: #fff; font-weight: 700; font-size: 1.05rem; padding: 0 0.75rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+    .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+    nav a, nav button {
+      display: block; width: 100%; text-align: left; color: #cbd5e1; background: none;
+      text-decoration: none; padding: 0.6rem 0.75rem; border-radius: 8px;
+      font: inherit; font-size: 0.95rem; border: 0; cursor: pointer;
+    }
+    nav a:hover, nav button:hover { background: #1e293b; color: #fff; }
+    nav a.active { background: var(--accent); color: #fff; }
+    nav .spacer { flex: 1; }
+    main { flex: 1; padding: 2rem 2.5rem; max-width: 1200px; }
+    h1 { font-size: 1.5rem; margin: 0 0 1.25rem; }
+    h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+    .cards { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .card {
+      background: var(--surface); border-radius: var(--radius); padding: 1.1rem 1.5rem;
+      box-shadow: 0 1px 3px rgb(15 23 42 / 0.08); border: 1px solid var(--border);
+      min-width: 200px;
+    }
+    .card .label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.3rem; }
+    .card .value { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem;
+      box-shadow: 0 1px 3px rgb(15 23 42 / 0.06);
+    }
+    .chart-box { position: relative; height: 280px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .error { background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; color: #b91c1c; }
+    .saved { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius); padding: 0.6rem 1rem; margin-bottom: 1rem; color: #15803d; }
+    .filters {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 0.9rem 1rem; margin-bottom: 1.5rem; display: flex; gap: 0.75rem;
+      align-items: end; flex-wrap: wrap; box-shadow: 0 1px 3px rgb(15 23 42 / 0.06);
+    }
+    .filters label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.25rem; }
+    input, select, textarea {
+      padding: 0.5rem 0.65rem; border: 1px solid var(--border); border-radius: 8px;
+      font: inherit; color: var(--text); background: #fff;
+    }
+    input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+    button.primary, .button {
+      background: var(--accent); color: #fff; border: 0; border-radius: 8px;
+      padding: 0.55rem 1.1rem; cursor: pointer; font: inherit; font-size: 0.95rem;
+      text-decoration: none; display: inline-block;
+    }
+    button.primary:hover, .button:hover { background: #4f46e5; }
+    a.button { color: #fff; }
+    form.inline { display: inline; }
+    textarea { width: 100%; min-height: 8rem; }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+    @media (max-width: 900px) {
+      body { flex-direction: column; }
+      nav { width: 100%; flex-direction: row; align-items: center; }
+      .brand { margin-bottom: 0; }
+      nav .spacer { flex: 0; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="brand"><span class="dot"></span>grocery-agent</div>
+    {% set path = request.url.path %}
+    <a href="/" class="{{ 'active' if path == '/' }}">Dashboard</a>
+    <a href="/coverage" class="{{ 'active' if path == '/coverage' }}">Coverage</a>
+    <a href="/admin" class="{{ 'active' if path == '/admin' }}">Admin</a>
+    <div class="spacer"></div>
+    <form method="post" action="/logout"><button type="submit">Log out</button></form>
+  </nav>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

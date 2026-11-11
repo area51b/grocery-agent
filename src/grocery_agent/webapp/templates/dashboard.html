@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — grocery-agent{% endblock %}
+{% block content %}
+  <h1>Household grocery dashboard</h1>
+
+  {% if store_error %}
+    <p class="error">{{ store_error }} No data was modified.</p>
+  {% else %}
+  <form class="filters" method="get" action="/">
+    <div>
+      <label for="start">From</label>
+      <input type="date" id="start" name="start" value="{{ filters.start }}">
+    </div>
+    <div>
+      <label for="end">To</label>
+      <input type="date" id="end" name="end" value="{{ filters.end }}">
+    </div>
+    <div>
+      <label for="account">Account</label>
+      <select id="account" name="account">
+        <option value="">All accounts</option>
+        {% for name in accounts %}
+          <option value="{{ name }}" {% if filters.account == name %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="primary">Apply filters</button>
+    <a href="/" class="button" style="background: var(--bg); color: var(--text); border: 1px solid var(--border);">Reset</a>
+  </form>
+
+  <div class="cards">
+    <div class="card"><div class="label">Total spend</div><div class="value">${{ "%.2f" % (charts.total / 100) }}</div></div>
+    <div class="card"><div class="label">Promotion savings</div><div class="value">${{ "%.2f" % (charts.promo_savings / 100) }}</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="panel"><h3>Spend by month</h3><div class="chart-box"><canvas id="chart-month"></canvas></div></div>
+    <div class="panel"><h3>Spend by type</h3><div class="chart-box"><canvas id="chart-type"></canvas></div></div>
+    <div class="panel"><h3>Spend by account</h3><div class="chart-box"><canvas id="chart-account"></canvas></div></div>
+    <div class="panel"><h3>Top products</h3><div class="chart-box"><canvas id="chart-top"></canvas></div></div>
+  </div>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if not store_error %}
+<script src="/static/chart.umd.js"></script>
+<script>
+  const data = {{ charts | tojson }};
+  const PALETTE = ["#6366f1", "#22c55e", "#f59e0b", "#ec4899", "#14b8a6", "#a855f7", "#f97316", "#0ea5e9"];
+  // Values in `data` are integer cents; datasets convert to dollars exactly
+  // once. Axis ticks and tooltips therefore format dollars as-is.
+  const money = (v) => "$" + Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const charts = [];
+
+  function make(id, config) {
+    const el = document.getElementById(id);
+    if (el) charts.push(new Chart(el, config));
+  }
+
+  const tooltip = {
+    callbacks: { label: (ctx) => (ctx.dataset.label || "") + " " + money(ctx.parsed.y ?? ctx.parsed) },
+  };
+  const yMoney = { scales: { y: { ticks: { callback: (v) => "$" + Number(v).toLocaleString("en-US") } } } };
+
+  make("chart-month", {
+    type: "line",
+    data: {
+      labels: data.by_month.map((r) => r.month),
+      datasets: [{
+        label: "Spend",
+        data: data.by_month.map((r) => r.total_cents / 100),
+        borderColor: PALETTE[0],
+        backgroundColor: "rgba(99, 102, 241, 0.12)",
+        fill: true,
+        tension: 0.3,
+      }],
+    },
+    options: { ...yMoney, plugins: { tooltip } },
+  });
+
+  make("chart-type", {
+    type: "doughnut",
+    data: {
+      labels: data.by_type.map((r) => r.txn_type),
+      datasets: [{
+        data: data.by_type.map((r) => r.total_cents / 100),
+        backgroundColor: PALETTE,
+      }],
+    },
+    options: {
+      plugins: {
+        tooltip: { callbacks: { label: (ctx) => ctx.label + ": " + money(ctx.parsed) } },
+      },
+    },
+  });
+
+  make("chart-account", {
+    type: "bar",
+    data: {
+      labels: data.by_account.map((r) => r.account),
+      datasets: [{
+        label: "Spend",
+        data: data.by_account.map((r) => r.total_cents / 100),
+        backgroundColor: PALETTE[0],
+        borderRadius: 6,
+      }],
+    },
+    options: { ...yMoney, plugins: { tooltip } },
+  });
+
+  make("chart-top", {
+    type: "bar",
+    data: {
+      labels: data.top_products.map((r) => r.product_name),
+      datasets: [{
+        label: "Spend",
+        data: data.top_products.map((r) => r.total_spend_cents / 100),
+        backgroundColor: PALETTE[4],
+        borderRadius: 6,
+      }],
+    },
+    options: {
+      indexAxis: "y",
+      plugins: {
+        tooltip: { callbacks: { label: (ctx) => money(ctx.parsed.x) } },
+      },
+      scales: { x: { ticks: { callback: (v) => "$" + Number(v).toLocaleString("en-US") } } },
+    },
+  });
+</script>
+{% endif %}
+{% endblock %}

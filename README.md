@@ -77,8 +77,12 @@ Setup:
 The bot is deny-by-default: with `TELEGRAM_ALLOWED_USER_IDS` unset or empty,
 nobody can use it. Permitted members can type any question free-form, use the
 slash commands (`/spend`, `/top`, `/last`, `/help`), or tap the suggested
-questions shown by `/help`. Multiple members can chat at the same time; each
-person's own questions are answered one at a time.
+questions shown by `/help`. The slash-command menu (what Telegram suggests
+when you type `/`) is registered with Telegram at startup. The suggestion
+buttons are a reply keyboard: after editing them in the admin area, send
+`/help` once and the new keyboard replaces the old one in your Telegram app.
+Multiple members can chat at the same time; each person's own questions are
+answered one at a time.
 
 The bot runs in the foreground and blocks, so keep it alive with a terminal
 multiplexer or run it detached:
@@ -87,6 +91,37 @@ multiplexer or run it detached:
 tmux new -s grocery-bot 'uv run grocery telegram'   # or:
 nohup uv run grocery telegram > data/telegram.log 2>&1 &
 ```
+
+### Dashboard and admin web app
+
+Run the analytics dashboard and the Telegram bot as a single web application:
+
+```sh
+uv run grocery webapp
+```
+
+Then open `http://localhost:8000` (override with `GROCERY_WEB_PORT`) and log
+in with the `ADMIN_PASSWORD` from `.env`. The dashboard shows aggregate
+charts — total spend, spend by month, by account, by type, top products, and
+promotion savings — with date-range and account filters. Every figure is
+computed by the same deterministic read-only queries the agent uses; the
+store is opened strictly read-only.
+
+The admin area edits the bot's slash-command questions and the suggested
+questions shown on `/help`; edits apply to the running bot immediately and
+are persisted in a separate admin store (`data/admin.db`). The settings page
+shows non-credential configuration only — tokens, keys, and passwords stay in
+the git-ignored `.env` and are never displayed. Ingestion is not triggered
+from the dashboard; run `grocery ingest` separately as before.
+
+| Variable | Purpose |
+| --- | --- |
+| `ADMIN_PASSWORD` | Dashboard login password (unset = nobody can log in) |
+| `ADMIN_SESSION_SECRET` | Optional cookie-signing key (auto-generated if unset) |
+| `GROCERY_WEB_PORT` | Web port (default `8000`) |
+
+The bot's Telegram allowlist stays in `.env` (`TELEGRAM_ALLOWED_USER_IDS`) and
+is intentionally not editable from the dashboard.
 
 ### Analysis toolset
 

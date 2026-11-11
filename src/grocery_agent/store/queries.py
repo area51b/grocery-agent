@@ -43,11 +43,12 @@ def coverage(conn: sqlite3.Connection) -> dict:
     }
 
 
-def _account_clause(account: str | None, params: list) -> str:
+def _account_clause(account: str | None, params: list, alias: str | None = None) -> str:
     if account is None:
         return ""
     params.append(account)
-    return " AND account = ?"
+    column = f"{alias}.account" if alias else "account"
+    return f" AND {column} = ?"
 
 
 def _period_clause(start: str | None, end: str | None, params: list) -> str:
@@ -118,14 +119,18 @@ def spend_by_type_cents(
 def spend_by_month_cents(
     conn: sqlite3.Connection,
     account: str | None = None,
+    start: str | None = None,
+    end: str | None = None,
 ) -> list[dict]:
     """Spend grouped by calendar month, oldest first."""
-    params: list = []
+    lo, hi = _date_bounds(start, end)
+    params: list = [lo, hi]
     extra = _account_clause(account, params)
     rows = conn.execute(
         f"SELECT substr(purchased_at, 1, 7) AS month, "
         f"COALESCE(SUM(total_cents), 0), COUNT(*) "
-        f"FROM transaction_record WHERE 1=1{extra} "
+        f"FROM transaction_record WHERE purchased_at >= ? "
+        f"AND purchased_at <= ?{extra} "
         f"GROUP BY month ORDER BY month",
         params,
     ).fetchall()
@@ -190,7 +195,7 @@ def promotion_savings_cents(
     """Sum of discount amounts received on promoted items in a period."""
     lo, hi = _date_bounds(start, end)
     params: list = [lo, hi]
-    extra = _account_clause(account, params)
+    extra = _account_clause(account, params, alias="t")
     row = conn.execute(
         f"SELECT COALESCE(SUM(li.discount_cents), 0) FROM line_item li "
         f"JOIN transaction_record t "
@@ -210,7 +215,7 @@ def promoted_items(
     """Promoted line items with effective per-unit price paid."""
     lo, hi = _date_bounds(start, end)
     params: list = [lo, hi]
-    extra = _account_clause(account, params)
+    extra = _account_clause(account, params, alias="t")
     rows = conn.execute(
         f"SELECT li.product_name, li.quantity, li.unit_price_cents, "
         f"li.line_total_cents, li.promotion_text, li.discount_cents "
@@ -277,7 +282,7 @@ def product_price_history(
 ) -> list[dict]:
     """Occurrences of one exact product, chronological, with prices paid."""
     params: list = [product_name]
-    extra = _account_clause(account, params)
+    extra = _account_clause(account, params, alias="t")
     rows = conn.execute(
         f"SELECT t.purchased_at, li.quantity, li.unit_price_cents, "
         f"li.line_total_cents, li.promotion_text "
@@ -317,7 +322,7 @@ def top_products(
     """Products ranked by spend, quantity, or purchase count."""
     lo, hi = _date_bounds(start, end)
     params: list = [lo, hi]
-    extra = _account_clause(account, params)
+    extra = _account_clause(account, params, alias="t")
     order_by = _TOP_PRODUCT_METRICS.get(metric, _TOP_PRODUCT_METRICS["spend"])
     rows = conn.execute(
         f"SELECT li.product_name, COALESCE(SUM(li.line_total_cents), 0), "

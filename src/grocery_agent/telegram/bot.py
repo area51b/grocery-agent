@@ -15,7 +15,7 @@ import asyncio
 import os
 import sys
 
-from telegram import ReplyKeyboardMarkup
+from telegram import BotCommand, ReplyKeyboardMarkup
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -27,13 +27,31 @@ from grocery_agent.agent import answer_question
 from grocery_agent.agent.env import load_env
 from grocery_agent.telegram.commands import (
     COMMAND_QUESTIONS,
-    SUGGESTED_QUESTIONS,
+    COMMAND_LABELS,
     help_text,
 )
+from grocery_agent.webapp.bot_config import BotConfigProvider
 
 TELEGRAM_TEXT_LIMIT = 4096
 
 DENIAL_TEXT = "Sorry, you are not permitted to use this bot."
+
+# The Telegram command menu (what the app shows when the user types "/").
+COMMAND_MENU: tuple[str, ...] = ("start", *COMMAND_QUESTIONS.keys(), "help")
+COMMAND_DESCRIPTIONS: dict[str, str] = {
+    "start": "start the bot",
+    **COMMAND_LABELS,
+}
+
+
+async def setup_commands(application) -> None:
+    """Register the slash-command menu so clients offer autocomplete."""
+    await application.bot.set_my_commands(
+        [
+            BotCommand(name, COMMAND_DESCRIPTIONS.get(name, name))
+            for name in COMMAND_MENU
+        ]
+    )
 
 
 def parse_allowlist(raw: str | None) -> set[int]:
@@ -72,9 +90,15 @@ def split_reply(text: str, limit: int = TELEGRAM_TEXT_LIMIT) -> list[str]:
 class GroceryBot:
     """Routes Telegram updates to the insight agent, enforcing the allowlist."""
 
-    def __init__(self, allowed_ids: set[int], answer=answer_question):
+    def __init__(
+        self,
+        allowed_ids: set[int],
+        answer=answer_question,
+        config_provider: BotConfigProvider | None = None,
+    ):
         self.allowed_ids = allowed_ids
         self._answer = answer
+        self._config = config_provider or BotConfigProvider()
         self._locks: dict[int, asyncio.Lock] = {}
 
     def is_allowed(self, user_id: int | None) -> bool:
@@ -85,10 +109,11 @@ class GroceryBot:
         await self._handle(update, update.message.text)
 
     def command_handler(self, command: str):
-        """Build a handler that answers the command's mapped question."""
-        question = COMMAND_QUESTIONS[command]
+        """Build a handler that answers the command's configured question."""
+        default = COMMAND_QUESTIONS.get(command, "")
 
         async def handler(update, context) -> None:
+            question = self._config.questions().get(command, default)
             await self._handle(update, question)
 
         return handler
@@ -98,7 +123,7 @@ class GroceryBot:
         if not await self._permit(update):
             return
         keyboard = ReplyKeyboardMarkup(
-            [[question] for question in SUGGESTED_QUESTIONS],
+            [[question] for question in self._config.suggestions()],
             resize_keyboard=True,
         )
         await update.message.reply_text(help_text(), reply_markup=keyboard)
@@ -127,10 +152,21 @@ class GroceryBot:
         return False
 
 
-def build_application(token: str, allowed_ids: set[int], answer=None) -> Application:
+def build_application(
+    token: str,
+    allowed_ids: set[int],
+    answer=None,
+    config_provider: BotConfigProvider | None = None,
+) -> Application:
     """Build the Telegram application: commands, text handler, concurrency."""
-    bot = GroceryBot(allowed_ids, answer or answer_question)
-    app = Application.builder().token(token).concurrent_updates(True).build()
+    bot = GroceryBot(allowed_ids, answer or answer_question, config_provider)
+    app = (
+        Application.builder()
+        .token(token)
+        .post_init(setup_commands)
+        .concurrent_updates(True)
+        .build()
+    )
 
     app.add_handler(CommandHandler("start", bot.handle_help))
     app.add_handler(CommandHandler("help", bot.handle_help))

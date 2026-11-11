@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Admin — grocery-agent{% endblock %}
+{% block content %}
+  <h1>Bot configuration</h1>
+
+  {% if saved %}<p class="saved">Saved. Changes apply to the running bot immediately.</p>{% endif %}
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+  <div class="panel" style="max-width: 640px; margin-bottom: 1.5rem;">
+    <h3>Slash command questions</h3>
+    <p style="color: #64748b;">The question the agent answers for each command.</p>
+    {% for name, question in commands.items() %}
+      <form method="post" action="/admin/commands" style="margin-bottom: 0.75rem;">
+        <input type="hidden" name="name" value="{{ name }}">
+        <label for="q-{{ name }}"><strong>/{{ name }}</strong> {% if command_labels.get(name) %}— {{ command_labels.get(name) }}{% endif %}</label>
+        <input type="text" id="q-{{ name }}" name="question" value="{{ question }}" style="width: 100%;">
+        <button type="submit" style="margin-top: 0.25rem;">Save</button>
+      </form>
+    {% endfor %}
+  </div>
+
+  <div class="panel" style="max-width: 640px;">
+    <h3>Suggested questions</h3>
+    <p style="color: #64748b;">One question per line; shown as tappable buttons on /help and /start.</p>
+    <form method="post" action="/admin/suggestions">
+      <textarea name="suggestions">{% for s in suggestions %}{{ s }}
+{% endfor %}</textarea>
+      <button type="submit" style="margin-top: 0.5rem;">Save</button>
+    </form>
+  </div>
+{% endblock %}

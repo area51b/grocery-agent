@@ -4,6 +4,7 @@ Commands:
     grocery ingest --account <label>   Ingest transaction history for one account.
     grocery ask "<question>"           Ask the insight agent a question.
     grocery telegram                   Run the Telegram bot chat interface.
+    grocery webapp                     Run dashboard + Telegram bot in one web app.
 """
 
 from __future__ import annotations
@@ -40,6 +41,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Run the Telegram bot so household members can chat with the agent.",
     )
 
+    webapp_parser = subparsers.add_parser(
+        "webapp",
+        help="Run the dashboard and Telegram bot as one web application.",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "ingest":
@@ -56,6 +62,11 @@ def main(argv: list[str] | None = None) -> int:
         from grocery_agent.telegram.bot import run as run_bot
 
         return run_bot()
+
+    if args.command == "webapp":
+        from grocery_agent.webapp.server import run_webapp
+
+        return run_webapp()
 
     parser.print_usage(sys.stderr)
     return 2
