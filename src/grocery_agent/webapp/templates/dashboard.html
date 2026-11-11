@@ -55,8 +55,16 @@
 
   function make(id, config) {
     const el = document.getElementById(id);
-    if (el) charts.push(new Chart(el, config));
+    if (!el) return;
+    // Fill the fixed-height .chart-box and make tooltips easier to trigger on
+    // touch screens; per-chart options still take precedence.
+    config.options = { maintainAspectRatio: false, interaction: { intersect: false }, ...config.options };
+    charts.push(new Chart(el, config));
   }
+
+  // Shorten axis labels so long names don't get clipped on narrow screens;
+  // the full text is shown in the tooltip instead.
+  const truncate = (text, max = 16) => (text.length > max ? text.slice(0, max - 1) + "…" : text);
 
   const tooltip = {
     callbacks: { label: (ctx) => (ctx.dataset.label || "") + " " + money(ctx.parsed.y ?? ctx.parsed) },
@@ -112,7 +120,7 @@
   make("chart-top", {
     type: "bar",
     data: {
-      labels: data.top_products.map((r) => r.product_name),
+      labels: data.top_products.map((r) => truncate(r.product_name)),
       datasets: [{
         label: "Spend",
         data: data.top_products.map((r) => r.total_spend_cents / 100),
@@ -123,9 +131,17 @@
     options: {
       indexAxis: "y",
       plugins: {
-        tooltip: { callbacks: { label: (ctx) => money(ctx.parsed.x) } },
+        tooltip: {
+          callbacks: {
+            title: (items) => data.top_products[items[0].dataIndex].product_name,
+            label: (ctx) => money(ctx.parsed.x),
+          },
+        },
       },
-      scales: { x: { ticks: { callback: (v) => "$" + Number(v).toLocaleString("en-US") } } },
+      scales: {
+        x: { ticks: { callback: (v) => "$" + Number(v).toLocaleString("en-US") } },
+        y: { ticks: { autoSkip: false } },
+      },
     },
   });
 </script>

@@ -55,6 +55,7 @@
       box-shadow: 0 1px 3px rgb(15 23 42 / 0.06);
     }
     .chart-box { position: relative; height: 280px; }
+    .chart-box canvas { max-width: 100%; }
     table { border-collapse: collapse; width: 100%; }
     th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
     th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -83,10 +84,26 @@
     .muted { color: var(--muted); font-size: 0.9rem; }
     @media (max-width: 900px) {
       body { flex-direction: column; }
-      nav { width: 100%; flex-direction: row; align-items: center; }
-      .brand { margin-bottom: 0; }
+      nav {
+        width: 100%; flex-direction: row; align-items: center;
+        flex-wrap: wrap; gap: 0.25rem; padding: 0.6rem 0.75rem;
+      }
+      .brand { margin-bottom: 0; white-space: nowrap; }
+      nav a, nav button { width: auto; white-space: nowrap; padding: 0.45rem 0.7rem; }
       nav .spacer { flex: 0; }
-      .grid { grid-template-columns: 1fr; }
+      main { padding: 1rem 1rem 1.5rem; }
+      .grid { grid-template-columns: 1fr; gap: 1rem; }
+    }
+    @media (max-width: 600px) {
+      h1 { font-size: 1.35rem; }
+      .card .value { font-size: 1.5rem; }
+      .panel { padding: 1rem; }
+      .chart-box { height: 220px; }
+      table { display: block; overflow-x: auto; }
+      nav a, nav button {
+        padding: 0.35rem 0.7rem;
+        min-height: 40px; display: flex; align-items: center;
+      }
     }
   </style>
 </head>
