@@ -52,6 +52,42 @@ data; the agent relays tool results and states the coverage of the data. The
 ad-hoc SQL path runs on a strictly read-only database connection, so the
 agent's questions can never modify the store.
 
+### Chat with the agent on Telegram
+
+Instead of the CLI, household members can ask questions in a Telegram chat:
+
+```sh
+uv run grocery telegram
+```
+
+Setup:
+
+1. Create a bot with [@BotFather](https://t.me/BotFather) in Telegram and copy
+   its token.
+2. Put the token in `.env` (git-ignored):
+
+   | Variable | Purpose |
+   | --- | --- |
+   | `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather |
+   | `TELEGRAM_ALLOWED_USER_IDS` | Comma-separated numeric Telegram user IDs allowed to chat |
+
+3. Find your Telegram user ID (e.g. message @userinfobot) and list the IDs of
+   every household member who should have access.
+
+The bot is deny-by-default: with `TELEGRAM_ALLOWED_USER_IDS` unset or empty,
+nobody can use it. Permitted members can type any question free-form, use the
+slash commands (`/spend`, `/top`, `/last`, `/help`), or tap the suggested
+questions shown by `/help`. Multiple members can chat at the same time; each
+person's own questions are answered one at a time.
+
+The bot runs in the foreground and blocks, so keep it alive with a terminal
+multiplexer or run it detached:
+
+```sh
+tmux new -s grocery-bot 'uv run grocery telegram'   # or:
+nohup uv run grocery telegram > data/telegram.log 2>&1 &
+```
+
 ### Analysis toolset
 
 The agent chooses among these tools (defined in

@@ -53,3 +53,31 @@ class TestAgentToolRegistration:
     def test_registry_exposes_all_tools(self):
         for name in EXPECTED_TOOLS:
             assert callable(getattr(registry, name))
+
+
+class _StubReply:
+    def __init__(self, content):
+        self.content = content
+
+
+class StubAgent:
+    """Stands in for the LangGraph agent; records questions, returns fixed text."""
+
+    def __init__(self):
+        self.questions = []
+
+    async def ainvoke(self, inputs):
+        self.questions.append(inputs["messages"][0][1])
+        return {"messages": [("user", self.questions[-1]), _StubReply("stub answer")]}
+
+
+class TestAnswerQuestion:
+    @pytest.mark.asyncio
+    async def test_answer_question_returns_final_message_text(self, monkeypatch):
+        stub = StubAgent()
+        monkeypatch.setattr(agent_module, "_agent", stub)
+
+        reply = await agent_module.answer_question("How much did we spend?")
+
+        assert reply == "stub answer"
+        assert stub.questions == ["How much did we spend?"]

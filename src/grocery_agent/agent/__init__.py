@@ -91,7 +91,18 @@ def build_agent():
 
 def run_ask(question: str) -> int:
     """Answer one question via the agent. Returns a process exit code."""
-    agent = build_agent()
-    result = agent.invoke({"messages": [("user", question)]})
-    print(result["messages"][-1].content)
+    import asyncio
+
+    print(asyncio.run(answer_question(question)))
     return 0
+
+
+async def answer_question(question: str) -> str:
+    """Answer one question via the agent and return the final message text.
+
+    Shared entry point for every interface over the agent (CLI, Telegram bot);
+    the caller decides how to present the reply.
+    """
+    agent = build_agent()
+    result = await agent.ainvoke({"messages": [("user", question)]})
+    return str(result["messages"][-1].content)

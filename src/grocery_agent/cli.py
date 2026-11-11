@@ -3,6 +3,7 @@
 Commands:
     grocery ingest --account <label>   Ingest transaction history for one account.
     grocery ask "<question>"           Ask the insight agent a question.
+    grocery telegram                   Run the Telegram bot chat interface.
 """
 
 from __future__ import annotations
@@ -34,6 +35,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     ask_parser.add_argument("question", help="The question to answer.")
 
+    telegram_parser = subparsers.add_parser(
+        "telegram",
+        help="Run the Telegram bot so household members can chat with the agent.",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "ingest":
@@ -45,6 +51,11 @@ def main(argv: list[str] | None = None) -> int:
         from grocery_agent.agent import run_ask
 
         return run_ask(args.question)
+
+    if args.command == "telegram":
+        from grocery_agent.telegram.bot import run as run_bot
+
+        return run_bot()
 
     parser.print_usage(sys.stderr)
     return 2
